@@ -95,9 +95,18 @@ static irqreturn_t fsl_sai_isr(int irq, void *devid)
 		dev_dbg(dev, "isr: Tx Frame sync error detected\n");
 
 	if (flags & FSL_SAI_CSR_FEF) {
-		dev_dbg(dev, "isr: Transmit underrun detected\n");
-		/* FIFO reset for safety */
-		xcsr |= FSL_SAI_CSR_FR;
+	    dev_dbg(dev, "isr: Transmit underrun detected\n");
+	
+	    /* FIFO reset for safety */
+	    xcsr |= FSL_SAI_CSR_FR;
+
+	    dev_dbg(dev, "isr: Write reset bit\n");
+	    /* Write the updated xcsr back to the register to trigger the reset */
+	    regmap_write(sai->regmap, FSL_SAI_TCSR(ofs), xcsr);
+
+	    dev_dbg(dev, "isr: Clear FEF flag\n");
+	    /* Optionally, clear the FEF flag after reset */
+	    regmap_update_bits(sai->regmap, FSL_SAI_TCSR(ofs), FSL_SAI_CSR_FEF, FSL_SAI_CSR_FEF);
 	}
 
 	if (flags & FSL_SAI_CSR_FWF)
